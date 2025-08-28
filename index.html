@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>ULTIMATE CHAOS MAX</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; overflow: hidden; background: black;
+    cursor: crosshair;
+    transition: filter 0.1s ease, transform 0.5s ease;
+    user-select: none;
+    color: white;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+  }
+
+  body.shake {
+    animation: shakeScreen 0.1s infinite;
+  }
+
+  @keyframes shakeScreen {
+    0% { transform: translate(2px, 2px) rotate(0.5deg) scale(1.02);}
+    25% { transform: translate(-2px, -1px) rotate(-0.5deg) scale(0.98);}
+    50% { transform: translate(1px, -2px) rotate(0.3deg) scale(1.01);}
+    75% { transform: translate(-1px, 1px) rotate(-0.3deg) scale(0.99);}
+    100% { transform: translate(2px, 2px) rotate(0.5deg) scale(1.02);}
+  }
+
+  .face {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    pointer-events: none;
+    user-select: none;
+    mix-blend-mode: difference;
+  }
+
+  .text {
+    position: absolute;
+    font-weight: bold;
+    font-size: 48px;
+    color: white;
+    text-shadow: 0 0 5px #f00, 0 0 10px #f00;
+    user-select: none;
+    mix-blend-mode: difference;
+    animation: shakeText 0.15s infinite alternate;
+    pointer-events: none;
+  }
+
+  @keyframes shakeText {
+    from { transform: translate(0, 0) rotate(-4deg) scale(1.1); }
+    to { transform: translate(5px, 3px) rotate(4deg) scale(1); }
+  }
+
+  #textRain {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 9999;
+    font-size: 20px;
+    color: lime;
+    font-weight: bold;
+    text-shadow: 0 0 3px #0f0;
+  }
+
+  /* Glitch RGB split effect */
+  .glitch {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
+  .glitch > div {
+    position: absolute;
+    top: 0; left: 0; width: 100%;
+    height: 100%;
+    background: black;
+    mix-blend-mode: screen;
+  }
+  .glitch .red {
+    clip-path: inset(0 0 0 0);
+    animation: glitchRed 0.3s infinite;
+    filter: drop-shadow(2px 0 red);
+  }
+  .glitch .green {
+    clip-path: inset(0 0 0 0);
+    animation: glitchGreen 0.4s infinite;
+    filter: drop-shadow(-2px 0 green);
+  }
+  .glitch .blue {
+    clip-path: inset(0 0 0 0);
+    animation: glitchBlue 0.5s infinite;
+    filter: drop-shadow(0 2px blue);
+  }
+  @keyframes glitchRed {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(5px, -5px); }
+  }
+  @keyframes glitchGreen {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-5px, 5px); }
+  }
+  @keyframes glitchBlue {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(5px, 5px); }
+  }
+</style>
+</head>
+<body>
+
+<div id="textRain"></div>
+<div class="glitch">
+  <div class="red"></div>
+  <div class="green"></div>
+  <div class="blue"></div>
+</div>
+
+<script>
+  const trollUrl = 'https://upload.wikimedia.org/wikipedia/en/9/9a/Trollface_non-free.png';
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+  // Load sounds
+  const soundUrls = [
+    'https://www.soundjay.com/mechanical/sounds/gun-gunshot-01.mp3',
+    'https://www.soundjay.com/button/sounds/button-10.mp3',
+    'https://www.soundjay.com/button/sounds/button-3.mp3',
+    'https://www.soundjay.com/misc/sounds/glitch-1.mp3'
+  ];
+  let soundBuffers = {};
+
+  Promise.all(soundUrls.map(url =>
+    fetch(url).then(r => r.arrayBuffer())
+      .then(buffer => audioContext.decodeAudioData(buffer))
+  )).then(buffers => {
+    soundBuffers['gunshot'] = buffers[0];
+    soundBuffers['beep'] = buffers[1];
+    soundBuffers['beep2'] = buffers[2];
+    soundBuffers['glitch'] = buffers[3];
+  }).catch(console.error);
+
+  function playSound(name) {
+    if(!soundBuffers[name]) return;
+    const src = audioContext.createBufferSource();
+    src.buffer = soundBuffers[name];
+    src.connect(audioContext.destination);
+    src.start(0);
+  }
+
+  // Screen shake toggle
+  document.body.classList.add('shake');
+
+  // Chaos faces moving
+  function createFace() {
+    const img = document.createElement('img');
+    img.src = trollUrl;
+    img.className = 'face';
+    document.body.appendChild(img);
+    let x = Math.random() * window.innerWidth;
+    let y = Math.random() * window.innerHeight;
+    let dx = (Math.random() - 0.5) * 15;
+    let dy = (Math.random() - 0.5) * 15;
+
+    function move() {
+      x += dx;
+      y += dy;
+      if(x < -80) x = window.innerWidth;
+      if(x > window.innerWidth) x = -80;
+      if(y < -80) y = window.innerHeight;
+      if(y > window.innerHeight) y = -80;
+      img.style.left = x + 'px';
+      img.style.top = y + 'px';
+      requestAnimationFrame(move);
+    }
+    move();
+  }
+
+  // Random chaotic text
+  function createText() {
+    const text = document.createElement('div');
+    text.className = 'text';
+    const messages = [
+      "YOU ARE CHAOS!",
+      "NO ESCAPE!",
+      "GLITCHED OUT!",
+      "RUN AWAY!",
+      "CAN'T STOP!",
+      "TOO MUCH CHAOS!",
+      "OVERLOAD!",
+      "SYSTEM FAILURE!",
+      "ERROR!",
+      "CRASH!"
+    ];
+    text.textContent = messages[Math.floor(Math.random() * messages.length)];
+    text.style.left = Math.random() * (window.innerWidth - 300) + 'px';
+    text.style.top = Math.random() * (window.innerHeight - 100) + 'px';
+    text.style.color = `hsl(${Math.random()*360}, 100%, 70%)`;
+    document.body.appendChild(text);
+
+    let flickerInterval = setInterval(() => {
+      text.style.color = `hsl(${Math.random()*360}, 100%, 70%)`;
+      text.style.transform = `rotate(${(Math.random() - 0.5)*45}deg) scale(${1 + Math.random()*0.7}) translate(${(Math.random() - 0.5)*50}px, ${(Math.random() - 0.5)*50}px)`;
+    }, 80);
+
+    setTimeout(() => {
+      clearInterval(flickerInterval);
+      text.remove();
+    }, 5000 + Math.random() * 5000);
+  }
+
+  // Chaos background flashing + blur + invert flicker
+  function chaosBackground() {
+    document.body.style.backgroundColor = `hsl(${Math.random()*360}, 100%, 20%)`;
+    if(Math.random() > 0.5) {
+      document.body.style.filter = 'invert(1) blur(3px)';
+    } else {
+      document.body.style.filter = 'invert(0) blur(0px)';
+    }
+  }
+  setInterval(chaosBackground, 100);
+
+  // Random zoom effect
+  let zoomLevel = 1;
+  let zoomDir = 1;
+  setInterval(() => {
+    zoomLevel += zoomDir * 0.01;
+    if(zoomLevel > 1.15) zoomDir = -1;
+    if(zoomLevel < 0.85) zoomDir = 1;
+    document.body.style.transform = `scale(${zoomLevel}) rotate(${Math.sin(Date.now()/500)*5}deg)`;
+  }, 60);
+
+  // Spawn faces fast
+  setInterval(() => { createFace(); }, 100);
+  // Spawn texts super fast
+  setInterval(() => { createText(); }, 80);
+
+  // Play rapid gunshot & sounds
+  function chaosSoundLoop() {
+    const sounds = ['gunshot', 'beep', 'beep2', 'glitch'];
+    playSound('gunshot');
+    if(Math.random() > 0.5) {
+      const randSound = sounds[Math.floor(Math.random() * sounds.length)];
+      playSound(randSound);
+    }
+  }
+
+  // Toggle fullscreen + chaos on click with sound start/stop
+  document.addEventListener('click', async () => {
+    if (!document.fullscreenElement) {
+      try {
+        await document.body.requestFullscreen();
+      } catch(e) {
+        console.error("Fullscreen failed:", e);
+        return;
+      }
+    } else {
+      try {
+        await document.exitFullscreen();
+        if(window.chaosSoundInterval) {
+          clearInterval(window.chaosSoundInterval);
+          window.chaosSoundInterval = null;
+        }
+        return;
+      } catch(e) {
+        console.error("Exit fullscreen failed:", e);
+        return;
+      }
+    }
+
+    if(audioContext.state === 'suspended') {
+      await audioContext.resume();
+    }
+
+    if(window.chaosSoundInterval) clearInterval(window.chaosSoundInterval);
+    window.chaosSoundInterval = setInterval(chaosSoundLoop, 150);
+  });
+
+  // Cursor explosion of troll faces on mousemove
+  document.addEventListener('mousemove', (e) => {
+    for(let i = 0; i < 7; i++) {
+      const img = document.createElement('img');
+      img.src = trollUrl;
+      img.className = 'face';
+      document.body.appendChild(img);
+      let offsetX = (Math.random() - 0.5) * 200;
+      let offsetY = (Math.random() - 0.5) * 200;
+      img.style.left = e.clientX + offsetX + 'px';
+      img.style.top = e.clientY + offsetY + 'px';
+
+      img.style.transition = 'opacity 1.5s linear';
+      img.style.opacity = '1';
+      setTimeout(() => { img.style.opacity = '0'; }, 100);
+      setTimeout(() => { img.remove(); }, 1600);
+    }
+  });
+
+  // TEXT RAIN effect
+  const textRainEl = document.getElementById('textRain');
+  const rainChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+  const columns = Math.floor(window.innerWidth / 20);
+  let rainDrops = Array(columns).fill(0);
+
+  function drawTextRain() {
+    textRainEl.innerHTML = '';
+    for(let i = 0; i < columns; i++) {
+      let charIndex = Math.floor(Math.random() * rainChars.length);
+      let char = rainChars.charAt(charIndex);
+      let span = document.createElement('span');
+      span.style.position = 'absolute';
+      span.style.left = (i * 20) + 'px';
+      span.style.top = (rainDrops[i] * 20) + 'px';
+      span.style.color = `hsl(${Math.random()*360}, 100%, 70%)`;
+      span.textContent = char;
+      textRainEl.appendChild(span);
+
+      rainDrops[i]++;
+      if(rainDrops[i] * 20 > window.innerHeight && Math.random() > 0.975) {
+        rainDrops[i] = 0;
+      }
+    }
+  }
+  setInterval(drawTextRain, 50);
+
+  // Invert mouse controls sometimes (chaotic)
+  let invertMouse = false;
+  setInterval(() => {
+    invertMouse = Math.random() > 0.7;
+  }, 3000);
+
+  let lastMouseX = 0, lastMouseY = 0;
+  window.addEventListener('mousemove', e => {
+    if(invertMouse) {
+      const dx = lastMouseX - e.clientX;
+      const dy = lastMouseY - e.clientY;
+      window.scrollBy(dx*3, dy*3);
+    }
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+  });
+
+  // Random scroll jumps & zoom glitches
+  setInterval(() => {
+    if(Math.random() > 0.7) {
+      window.scrollTo(
+        Math.random() * document.body.scrollWidth,
+        Math.random() * document.body.scrollHeight
+      );
+    }
+    if(Math.random() > 0.8) {
+      document.body.style.transform += ` scale(${0.8 + Math.random() * 0.4}) rotate(${(Math.random() - 0.5) * 40}deg)`;
+    }
+  }, 1000);
+
+  // Random screen flashes white/red
+  setInterval(() => {
+    if(Math.random() > 0.85) {
+      document.body.style.backgroundColor = (Math.random() > 0.5) ? 'white' : 'red';
+      setTimeout(() => {
+        document.body.style.backgroundColor = 'black';
+      }, 100);
+    }
+  }, 800);
+
+  // Overlay tons of troll faces randomly layered
+  setInterval(() => {
+    for(let i = 0; i < 5; i++) {
+      const img = document.createElement('img');
+      img.src = trollUrl;
+      img.className = 'face';
+      img.style.opacity = (Math.random() * 0.5 + 0.3).toFixed(2);
+      img.style.left = Math.random() * window.innerWidth + 'px';
+      img.style.top = Math.random() * window.innerHeight + 'px';
+      img.style.width = (30 + Math.random() * 100) + 'px';
+      img.style.height = 'auto';
+      document.body.appendChild(img);
+      setTimeout(() => { img.remove(); }, 5000);
+    }
+  }, 300);
+
+  // Random alert spam (capped so user isn't locked out completely)
+  let alertCount = 0;
+  setInterval(() => {
+    if(Math.random() > 0.95 && alertCount < 7) {
+      alertCount++;
+      alert("YOU CAN'T ESCAPE CHAOS!");
+      setTimeout(() => { alertCount--; }, 30000);
+    }
+  }, 5000);
+
+</script>
+
+</body>
+</html>
